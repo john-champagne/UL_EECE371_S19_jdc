@@ -4,7 +4,12 @@
 #include <math.h>
 #endif
 
-typedef byte uint8_t;
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+
+typedef uint8_t byte;
 
 
 #ifdef PIECEWISE
@@ -35,14 +40,14 @@ float tanh(float i){
 }
 #endif
 
-float relu(float i) { return x >= 0 ? x : 0; }
+float relu(float i) { return i >= 0 ? i : 0; }
 
 
 
 
 float* perceptron_layer(float* inputs, byte input_size, float** weights, byte output_size, float* bias){
     /* allocate output matrix */
-    float* output = malloc(sizeof(float)*output_size);
+    float* output = (float*)malloc(sizeof(float)*output_size);
     
     /* matrix multiplication the dumb way */
     for (int i = 0; i < output_size; i++) {
@@ -55,27 +60,52 @@ float* perceptron_layer(float* inputs, byte input_size, float** weights, byte ou
     return output;
 } 
 
-float conv_single(float data[5][5], float filter[3][3], byte X, byte Y){
-    for (int i = 0; i < 3; i++)
+float conv_single(float data[3][3], float filter[3][3]){
+    float sum = 0;
+    for (int i = 0; i < 3; i++){
+        for (int j = 0; j < 3; j++){
+            for (int k = 0; k < 3; k++){
+                sum += data[i][k] * filter[k][j];       
+            }
+        }
+    }
+    return sum;
 }
 
 float** conv(float data[5][5], float filter[3][3]){
-    float output[3][3] = {{0,0,0},{0,0,0},{0,0,0}};
+    float** output = (float**)malloc(sizeof(float*) * 3);
+    for (int i = 0; i < 3; i++)
+        output[i] = (float*)malloc(sizeof(float) * 3);
     for (int i = 0; i < 3; i++){
         for (int j = 0; j < 3; j++){
-            output[i][j] = conv_single(data,filter,i,j);
+            float window[3][3];
+            for (int k = 0; k < 3; k++)
+                for (int l = 0; l < 3; l++)
+                    window[k][l] = data[i + k][j + l];
+            
+            output[i][j] = conv_single(window,filter);
         }
     }
+    return output;
 }
 
-void setup() {
+int main() {
     float layer_1_weights[2][2];
     float layer_1_bias[2];
 
     float output_weights[1][2];
-    float output_bias[1];
+    float output_bias[1] = {rand()};
+    
+    for (int i = 0; i < 2; i++){
+        layer_1_bias[i] = rand();
+        output_weights[1][i] = rand();
+        for (int j = 0; j < 2; j++)
+            layer_1_weights[i][j] = rand();
+    }
+
+    float x[2] = {1,1};
+    float* layer_1 = perceptron_layer((float*)x, 2, (float**)layer_1_weights, 2, layer_1_bias);
+    float* out = perceptron_layer(layer_1, 2, (float**)output_weights, 1, output_bias);
+    printf("%f", (*out));
 }
 
-void loop() {
-
-}
